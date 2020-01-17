@@ -22,7 +22,6 @@
     }
   },
   "scripts": {
-    "create": "PluginWizard\\Wizard::run",
-    "auto": "@create --no-interact"
+    "create": "PluginWizard\\Wizard::run"
   }
 }
