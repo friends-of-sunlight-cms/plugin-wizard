@@ -16,6 +16,10 @@ Requirements
 Usage
 *****
 
+#. Download (and extract) or clone this repository locally.
+#. Run composer command.
+#. Follow the on-screen instructions.
+
 ::
 
     composer run-script (create|create-short) [name] [--]
