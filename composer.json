@@ -22,6 +22,7 @@
     }
   },
   "scripts": {
-    "create": "PluginWizard\\Wizard::run"
+    "create": "PluginWizard\\Wizard::createFull",
+    "create-short": "PluginWizard\\Wizard::createShort"
   }
 }

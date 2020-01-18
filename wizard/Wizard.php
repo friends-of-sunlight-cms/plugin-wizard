@@ -21,23 +21,26 @@ class Wizard
     /** @var string */
     private $plugin_name = '';
 
-    // FLAG
     /** @var bool */
-    private $interact = true;
+    private $short = false;
 
     /**
      * @param Event $event
      */
-    static function run(Event $event)
+    static function createFull(Event $event)
     {
         $wizard = new static($event);
-        echo "\n";
-        $wizard->processArguments();
-        $wizard->execute();
-        $wizard->cleanup();
+        $wizard->run();
+    }
 
-        echo "\n\033[0;32m[DONE]\033[0m Your plugin is ready.\n";
-        exit;
+    /**
+     * @param Event $event
+     */
+    static function createShort(Event $event)
+    {
+        $wizard = new static($event);
+        $wizard->setShort(true);
+        $wizard->run();
     }
 
     /**
@@ -50,11 +53,16 @@ class Wizard
     }
 
     /**
-     * @return array
+     * Run processing
      */
-    function getArguments()
+    function run()
     {
-        return $this->event->getArguments();
+        echo "\n";
+        $this->processArguments();
+        $this->execute();
+        $this->cleanup();
+        echo "\n\033[0;32m[DONE]\033[0m Your plugin is ready.\n";
+        exit;
     }
 
     /**
@@ -62,13 +70,7 @@ class Wizard
      */
     function processArguments()
     {
-        $args = $this->getArguments();
-        foreach ($args as $arg) {
-            if (substr($args[0], 0, 2) == "--") {
-                $this->processFlag($args[0]);
-                array_shift($args);
-            }
-        }
+        $args = $this->event->getArguments();
 
         $entered_name = $this->getEnteredName($args);
         $this->plugin_id = $this->slugify(strtolower($entered_name));
@@ -76,15 +78,11 @@ class Wizard
     }
 
     /**
-     * @param string $flag
+     * @param bool $state
      */
-    function processFlag($flag)
+    function setShort($state = true)
     {
-        switch ($flag) {
-            case '--no-interact':
-                $this->interact = false;
-                break;
-        }
+        $this->short = $state;
     }
 
     /**
@@ -92,20 +90,14 @@ class Wizard
      */
     function getEnteredName($args)
     {
-        if (isset($args[0]) && $args[0] !== "") {
+        if ((isset($args[0]) && ($args[0] !== "")) && (substr($args[0], 0, 2) !== '--')) {
             return implode(' ', $args);
-        } else {
-            $this->log("\033[0;31m[WARN]\033[0m You have not specified any plugin name, so the default name '\033[0;31mFooBar\033[0m' will be used.\n");
-            if($this->interact){
-                $io = $this->event->getIO();
-                if ($io->askConfirmation('Do you want to continue? [y/n] ', false)) {
-                    return 'FooBar';
-                } else {
-                    exit;
-                }
-            }else{
-                return 'FooBar';
-            }
+        }
+
+        $this->log("\033[0;31m[WARN]\033[0m You have not specified any plugin name, so the default name '\033[0;31mFooBar\033[0m' will be used.\n");
+        $io = $this->event->getIO();
+        if ($io->askConfirmation("\nDo you want to continue? [y/n] ", true)) {
+            return "FooBar";
         }
     }
 
@@ -149,7 +141,6 @@ class Wizard
         } else {
             echo $message;
         }
-
     }
 
     /**
@@ -164,7 +155,8 @@ class Wizard
         $this->log("Creating a directory structure:\n");
 
         // paths
-        $plugin_full_path = 'plugins/extend/' . $this->getPluginId();
+        $base_path = ($this->short ? '' : 'plugins/extend/');
+        $plugin_full_path = $base_path . $this->getPluginId();
         $plugin_lang_path = $plugin_full_path . '/Resources/languages';
 
         // create plugin dir
@@ -182,9 +174,7 @@ class Wizard
         // create blank lang files
         $this->log("Creating language files.\n");
         $this->createLangFiles($plugin_lang_path, ['en', 'cs']);
-
     }
-
 
     /**
      * @param string $path path without trailing slash
@@ -195,6 +185,13 @@ class Wizard
     {
         if (!file_exists($path)) {
             mkdir($path, $mode, $recursive);
+        }else{
+            $io = $this->event->getIO();
+            if ($io->askConfirmation("\033[0;31m[WARN]\033[0m Directory already exists, do you want to overwrite it? [y/n] ", true)) {
+                mkdir($path, $mode, $recursive);
+            }else{
+                exit();
+            }
         }
     }
 
@@ -262,12 +259,8 @@ class Wizard
     {
         $cleanup = false;
 
-        if ($this->interact) {
-            $io = $this->event->getIO();
-            if ($io->askConfirmation("\nDistribution complete, do you want to clean up temporary files? [y/n] ", false)) {
-                $cleanup = true;
-            }
-        } else {
+        $io = $this->event->getIO();
+        if ($io->askConfirmation("\nDistribution complete, do you want to clean up temporary files? [y/n] ", true)) {
             $cleanup = true;
         }
 
@@ -275,7 +268,7 @@ class Wizard
             // remove wizard dir
             $this->deleteDirectoryTree('wizard');
             // remove composer file
-            @unlink('composer.json');
+            unlink('composer.json');
             $this->log("\nCleanup! The wizard distribution files have been removed.\n");
         }
     }
