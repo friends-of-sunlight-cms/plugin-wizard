@@ -267,8 +267,12 @@ class Wizard
         if ($cleanup) {
             // remove wizard dir
             $this->deleteDirectoryTree('wizard');
+            $this->deleteDirectoryTree('vendor');
             // remove composer file
             unlink('composer.json');
+            unlink('composer.lock');
+            unlink('LICENSE');
+            unlink('README.rst');
             $this->log("\nCleanup! The wizard distribution files have been removed.\n");
         }
     }
