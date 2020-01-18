@@ -185,11 +185,11 @@ class Wizard
     {
         if (!file_exists($path)) {
             mkdir($path, $mode, $recursive);
-        }else{
+        } else {
             $io = $this->event->getIO();
             if ($io->askConfirmation("\033[0;31m[WARN]\033[0m Directory already exists, do you want to overwrite it? [y/n] ", true)) {
                 mkdir($path, $mode, $recursive);
-            }else{
+            } else {
                 exit();
             }
         }
@@ -269,10 +269,12 @@ class Wizard
             $this->deleteDirectoryTree('wizard');
             $this->deleteDirectoryTree('vendor');
             // remove composer file
-            unlink('composer.json');
-            unlink('composer.lock');
-            unlink('LICENSE');
-            unlink('README.rst');
+            $rm = ['.gitattributes', 'composer.json', 'composer.lock', 'LICENSE', 'README.rst'];
+            foreach ($rm as $f) {
+                if (file_exists($f)) {
+                    unlink($f);
+                }
+            }
             $this->log("\nCleanup! The wizard distribution files have been removed.\n");
         }
     }
@@ -283,15 +285,17 @@ class Wizard
      */
     function deleteDirectoryTree($dir)
     {
-        $it = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
-        $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
-        foreach ($files as $file) {
-            if ($file->isDir()) {
-                rmdir($file->getRealPath());
-            } else {
-                unlink($file->getRealPath());
+        if (file_exists($dir) && is_dir($dir)) {
+            $it = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
+            $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($files as $file) {
+                if ($file->isDir()) {
+                    rmdir($file->getRealPath());
+                } else {
+                    unlink($file->getRealPath());
+                }
             }
+            rmdir($dir);
         }
-        rmdir($dir);
     }
 }
