@@ -1,9 +1,9 @@
 {
-  "name": "jdanek/plugin-wizard",
+  "name": "fosc/plugin-wizard",
   "type": "template",
   "description": "A template to make creating new Sunlight CMS 8 plugins easier.",
   "keywords": ["template","skeleton","sunlight-plugin"],
-  "homepage": "https://github.com/jDanek/plugin-wizard",
+  "homepage": "https://github.com/friends-of-sunlight-cms/plugin-wizard",
   "license": "MIT",
   "authors": [
     {
