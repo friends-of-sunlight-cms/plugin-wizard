@@ -6,6 +6,12 @@ A tool for making Sunlight CMS plugin architecture easier.
 
 .. contents::
 
+Preview
+*******
+.. image:: ./.preview/extend_preview.gif
+.. image:: ./.preview/template_preview.gif
+
+
 Requirements
 ************
 
