@@ -27,6 +27,30 @@ NC='\033[0m' # No Color
 BGRED='\033[0;41m'
 
 #=========================================================
+# VARIABLES
+#=========================================================
+DEFAULT_TYPE="extend"
+DEFAULT_NAME="Foobar"
+DEFAULT_DESC=""
+DEFAULT_VER="1.0.0"
+DEFAULT_URL="https://sunlight-cms.cz"
+DEFAULT_TPL_RESPONSIVE="n"
+DEFAULT_TPL_DARK="n"
+
+PLUGIN_TYPE=""
+PLUGIN_NAMES=("" "" "") # plugin name, class name, dir name
+PLUGIN_DESC=""
+PLUGIN_VERSION=""
+PLUGIN_URL=""
+PLUGIN_TEMPLATE_RESPONSIVE=""
+PLUGIN_TEMPLATE_RESPONSIVE_VAL=""
+PLUGIN_TEMPLATE_DARK=""
+PLUGIN_TEMPLATE_DARK_VAL=""
+
+PLUGIN_EXTEND_JSON=""
+PLUGIN_TEMPLATE_JSON=""
+
+#=========================================================
 # FUNCTIONS
 #=========================================================
 function printErr() {
@@ -35,10 +59,14 @@ function printErr() {
 
 function header() {
   echo ""
-  printf "${LBLUE}##############################################${NC}"; echo""
-  printf "${LBLUE}#${NC}       Sunlight CMS 8 - Plugin Wizard       ${LBLUE}#${NC}"; echo ""
-  printf "${LBLUE}#${NC} https://github.com/friends-of-sunlight-cms ${LBLUE}#${NC}"; echo ""
-  printf "${LBLUE}####################################${NC} v${WIZVERSION} ${LBLUE}##${NC}"; echo ""
+  printf "${LBLUE}##############################################${NC}"
+  echo""
+  printf "${LBLUE}#${NC}       Sunlight CMS 8 - Plugin Wizard       ${LBLUE}#${NC}"
+  echo ""
+  printf "${LBLUE}#${NC} https://github.com/friends-of-sunlight-cms ${LBLUE}#${NC}"
+  echo ""
+  printf "${LBLUE}####################################${NC} v${WIZVERSION} ${LBLUE}##${NC}"
+  echo ""
   echo ""
   printf "${DGRAY}This wizard will guide you through creating your plugin.${NC}"
   echo ""
@@ -46,53 +74,151 @@ function header() {
 }
 
 function runWizard() {
-
-  # query for the type of plugin required
-  read -ep $'Plugin type (extend|template) [\033[0;33mextend\033[0m]: ' PLUGIN_TYPE
-  PLUGIN_TYPE=${PLUGIN_TYPE:-extend}
-  PLUGIN_TYPE=${PLUGIN_TYPE,,}
-
-  # validate plugin type
-  case "$PLUGIN_TYPE" in
-    (extend|ext|e) PLUGIN_TYPE=extend ;;
-    (template|tpl|t) PLUGIN_TYPE=template ;;
-    (*)
-      printErr "Invalid plugin type!"
-      exit 1
-    ;;
-  esac
-
-  # query for the name of plugin required
-  read -ep $'Name [\033[0;33mFoobar\033[0m]: ' PLUGIN_NAME
-  PLUGIN_NAME=${PLUGIN_NAME:-Foobar}
-  PLUGIN_NAME=${PLUGIN_NAME,,} # lowercase
-  PLUGIN_NAME=${PLUGIN_NAME// /} # remove spaces
-
-  # creating plugin
-  case "$PLUGIN_TYPE" in
-        (extend)
-          createPluginFolders ${PLUGIN_TYPE} ${PLUGIN_NAME}
-          createExtend ${PLUGIN_NAME}
-        ;;
-        (template)
-          createPluginFolders "${PLUGIN_TYPE}s" ${PLUGIN_NAME} # folder must contain 's' at the end
-          createTemplate ${PLUGIN_NAME}
-        ;;
-        (*) ;;
-  esac
-
-  echo ""
-  printf "${GREEN}DONE! The skeleton of the new plugin '${NC}${PLUGIN_NAME^}${GREEN}' is ready.${NC}"
-  echo ""
+  createPluginByType
   exit 1
 }
 
+function createPluginByType() {
+  inputPluginType
+
+  case "$PLUGIN_TYPE" in
+  extend)
+    inputPluginName
+    inputPluginDesc
+    inputPluginVersion
+    inputPluginUrl
+
+    generationExtendPreview
+
+    createPluginFolders ${PLUGIN_TYPE} ${PLUGIN_NAMES[2]}
+    createExtendJson
+    createExtendClass
+    createExtendResLang
+    ;;
+  template)
+    inputPluginName
+    inputPluginDesc
+    inputPluginVersion
+    inputPluginUrl
+    inputTemplateReponsive
+    inputTemplateDark
+
+    generationTemplatePreview
+
+    createPluginFolders "${PLUGIN_TYPE}s" ${PLUGIN_NAMES[2]} # folder must contain 's' at the end
+    createTemplateJson
+    createTemplateFile
+    createTemplateLabels
+    copyTemplate
+    ;;
+  *) ;;
+  esac
+
+  echo ""
+  printf "${GREEN}DONE! The skeleton of the new plugin '${NC}${PLUGIN_NAMES[0]^}${GREEN}' is ready.${NC}"
+  echo ""
+}
+
+#=========================================================
+# EXTEND TYPE
+#=========================================================
+
+function inputPluginType() {
+
+  read -i "$PLUGIN_TYPE" -ep $'Plugin type (extend|template) [\033[0;33mextend\033[0m]: ' TYPE
+  PLUGIN_TYPE=${TYPE:-${DEFAULT_TYPE}}
+  PLUGIN_TYPE=${PLUGIN_TYPE,,} # lowercase
+
+  # validate plugin type
+  case "$PLUGIN_TYPE" in
+  extend | ext | e) PLUGIN_TYPE="extend" ;;
+  template | tpl | t) PLUGIN_TYPE="template" ;;
+  *)
+    printErr "Invalid plugin type: '$PLUGIN_TYPE'!"
+    PLUGIN_TYPE='' # reset
+    echo ""
+    inputPluginType # plugin type query again
+    ;;
+  esac
+}
+
+function inputPluginName() {
+  read -i "$PLUGIN_NAME" -ep $'Name [\033[0;33mFoobar\033[0m]: ' PLUGIN_NAME
+  PLUGIN_NAMES[0]=${PLUGIN_NAME:-${DEFAULT_NAME}}
+  PLUGIN_NAMES[1]=${PLUGIN_NAMES[0]// /} # remove spaces
+  PLUGIN_NAMES[2]=${PLUGIN_NAMES[1],,}   # lowercase
+}
+
+function inputPluginDesc() {
+  read -i "$PLUGIN_DESC" -ep 'Description []: ' PLUGIN_DESC
+}
+
+function inputPluginVersion() {
+  read -i "$PLUGIN_VERSION" -ep $'Version [\033[0;33m1.0.0\033[0m]: ' VERSION
+  PLUGIN_VERSION=${VERSION:-${DEFAULT_VER}}
+}
+
+function inputPluginUrl() {
+  read -i "$PLUGIN_URL" -ep $'Url [\033[0;33mhttps://sunlight-cms.cz\033[0m]: ' URL
+  PLUGIN_URL=${URL:-${DEFAULT_URL}}
+}
+
+function inputTemplateReponsive() {
+  read -ep $'Is RESPONSIVE (y|n) [\033[0;33mn\033[0m]?: ' RESP
+  PLUGIN_TEMPLATE_RESPONSIVE=${RESP:-${DEFAULT_TPL_RESPONSIVE}}
+  PLUGIN_TEMPLATE_RESPONSIVE=${PLUGIN_TEMPLATE_RESPONSIVE,,}
+
+  case "$PLUGIN_TEMPLATE_RESPONSIVE" in
+    y | yes | 1) PLUGIN_TEMPLATE_RESPONSIVE_VAL=true ;;
+    *) PLUGIN_TEMPLATE_RESPONSIVE_VAL=false ;;
+  esac
+}
+
+function inputTemplateDark() {
+  read -ep $'Is DARK (y|n) [\033[0;33mn\033[0m]?: ' DARK
+  PLUGIN_TEMPLATE_DARK=${DARK:-${DEFAULT_TPL_DARK}}
+  PLUGIN_TEMPLATE_DARK=${PLUGIN_TEMPLATE_DARK,,}
+
+  case "$PLUGIN_TEMPLATE_DARK" in
+    y | yes | 1) PLUGIN_TEMPLATE_DARK_VAL=true ;;
+    *) PLUGIN_TEMPLATE_DARK_VAL=false ;;
+  esac
+}
+
+#=========================================================
+# COMMON WIZARD FUNCTIONS
+#=========================================================
+
+function generationConfirm() {
+  read -ep $'Do you confirm generation (y|n) [\033[0;33my\033[0m]?: ' GEN
+  GEN=${GEN:-y}
+  GEN=${GEN,,}
+  case "$GEN" in
+  y | yes | 1)
+    echo ""
+    printf "${GREEN}Generating plugin files${NC}"
+    echo ""
+    ;;
+  *)
+    read -ep $'Do you want to correct the entered values? (y|n) [\033[0;33my\033[0m]?: ' COR
+    COR=${COR:-y}
+    COR=${COR,,}
+    case "$COR" in
+    y | yes | 1)
+      echo ""
+      createPluginByType
+      ;;
+    *)
+      printErr "Command aborted"
+      exit 1
+      ;;
+    esac
+    ;;
+  esac
+}
+
 function createPluginFolders() {
-  local ARG1=$1
-  local ARG2=$2
-  local TYPE=${ARG1,,} # lowercase
-  local NAME=${ARG2,,} # lowercase
-  local PLUGIN_PATH="plugins/${TYPE}/${NAME}"
+  local PLUGIN_PATH="plugins/$1/$2"
 
   if [ ! -d ${PLUGIN_PATH} ]; then
     mkdir -p ${PLUGIN_PATH}
@@ -104,12 +230,12 @@ function createPluginFolders() {
     PLUGIN_DELETE=${PLUGIN_DELETE:-n}
     PLUGIN_DELETE=${PLUGIN_DELETE,,}
     case "$PLUGIN_DELETE" in
-      (y|yes|1)
-        rm -rf ${PLUGIN_PATH};
-        printf "${GREEN}The${NC} '${PLUGIN_PATH}' ${GREEN}folder has been deleted!${NC}";
-        echo ""
+    y | yes | 1)
+      rm -rf ${PLUGIN_PATH}
+      printf "${GREEN}The${NC} '${PLUGIN_PATH}' ${GREEN}folder has been deleted!${NC}"
+      echo ""
       ;;
-      (*) ;;
+    *) ;;
     esac
     exit 1
   fi
@@ -119,12 +245,45 @@ function createPluginFolders() {
 # EXTEND TYPE
 #=========================================================
 
+function generationExtendPreview() {
+  PLUGIN_EXTEND_JSON=$(
+    cat <<-EOF
+{
+    "\$schema": "../../../system/schema/extend.json",
+    "name": "${PLUGIN_NAMES[0]}",
+    "description": "${PLUGIN_DESC}",
+    "version": "${PLUGIN_VERSION}",
+    "api": "^8.0",
+    "url": "${PLUGIN_URL}",
+    "class": "${PLUGIN_NAMES[1]}Plugin",
+    "langs": {
+        "${PLUGIN_NAMES[2],,}": "Resources/languages/"
+    },
+    "events": [],
+    "events.web": [],
+    "events.admin": []
+}
+EOF
+)
+
+  echo ""
+  echo "${PLUGIN_EXTEND_JSON}"
+  echo ""
+
+  generationConfirm
+}
+
+function createExtendJson() {
+  cat >plugin.json <<EOF
+${PLUGIN_EXTEND_JSON}
+EOF
+}
+
 function createExtendResLang() {
   mkdir -p Resources/languages
 
-  lng=( en cs )
-  for i in "${lng[@]}"
-  do
+  lng=(en cs)
+  for i in "${lng[@]}"; do
     cat >Resources/languages/$i.php <<EOF
 <?php
 
@@ -134,115 +293,64 @@ EOF
   done
 }
 
-function createExtendJson() {
-  local ARG1=$1
-  local NAME=${ARG1^} # capitalize
-
-  read -ep 'Description []: ' EXTEND_DESC
-  read -ep $'Version [\033[0;33m1.0.0\033[0m]: ' EXTEND_VERSION
-  EXTEND_VERSION=${EXTEND_VERSION:-"1.0.0"}
-  read -ep $'Url [\033[0;33mhttps://sunlight-cms.cz\033[0m]: ' EXTEND_URL
-  EXTEND_URL=${EXTEND_URL:-"https://sunlight-cms.cz"}
-
-  cat >plugin.json <<EOF
-{
-    "\$schema": "../../../system/schema/extend.json",
-    "name": "${NAME}",
-    "description": "${EXTEND_DESC}",
-    "version": "${EXTEND_VERSION}",
-    "api": "^8.0",
-    "url": "${EXTEND_URL}",
-    "class": "${NAME}Plugin",
-    "langs": {
-        "${NAME,,}": "Resources/languages/"
-    },
-    "events": [],
-    "events.web": [],
-    "events.admin": []
-}
-EOF
-}
-
 function createExtendClass() {
-  local ARG1=$1
-  local NAME=${ARG1^} # capitalize
-  cat >${NAME}Plugin.php <<EOF
+  local NAMESPACE=${PLUGIN_NAMES[2]^} # capitalize
+
+  cat >${PLUGIN_NAMES[1]}Plugin.php <<EOF
 <?php
 
-namespace SunlightExtend\\${NAME};
+namespace SunlightExtend\\${NAMESPACE};
 
 use Sunlight\Plugin\ExtendPlugin;
 
-class ${NAME}Plugin extends ExtendPlugin
+class ${PLUGIN_NAMES[1]}Plugin extends ExtendPlugin
 {
 
 }
 EOF
-}
-
-function createExtend() {
-  # create plugin.json
-  createExtendJson $1
-  # create <Name>Plugin.php
-  createExtendClass $1
-  # create Resources/languages/(cs|en).php
-  createExtendResLang
 }
 
 #=========================================================
 # TEMPLATE TYPE
 #=========================================================
 
-function createTemplateJson() {
-  local ARG1=$1
-  local NAME=${ARG1^} # capitalize
-
-  read -ep 'Description []: ' TEMPLATE_DESC
-
-  read -ep $'Version [\033[0;33m1.0.0\033[0m]: ' TEMPLATE_VERSION
-  TEMPLATE_VERSION=${TEMPLATE_VERSION:-"1.0.0"}
-
-  read -ep $'Url [\033[0;33mhttps://sunlight-cms.cz\033[0m]: ' TEMPLATE_URL
-  TEMPLATE_URL=${TEMPLATE_URL:-"https://sunlight-cms.cz"}
-
-  read -ep $'Is RESPONSIVE (y|n) [\033[0;33mn\033[0m]?: ' TEMPLATE_RESPONSIVE
-  TEMPLATE_RESPONSIVE=${TEMPLATE_RESPONSIVE:-n}
-  TEMPLATE_RESPONSIVE=${TEMPLATE_RESPONSIVE,,}
-  case "$TEMPLATE_RESPONSIVE" in
-    (y|yes|1) TEMPLATE_RESPONSIVE=true ;;
-    (*) TEMPLATE_RESPONSIVE=false ;;
-  esac
-
-  read -ep $'Is DARK (y|n) [\033[0;33mn\033[0m]?: ' TEMPLATE_DARK
-  TEMPLATE_DARK=${TEMPLATE_DARK:-n}
-  TEMPLATE_DARK=${TEMPLATE_DARK,,}
-  case "$TEMPLATE_DARK" in
-        (y|yes|1) TEMPLATE_DARK=true ;;
-        (*) TEMPLATE_DARK=false ;;
-  esac
-
-  cat >plugin.json <<EOF
+function generationTemplatePreview() {
+  PLUGIN_TEMPLATE_JSON=$(
+    cat <<-EOF
 {
     "\$schema": "../../../system/schema/template.json",
-    "name": "${NAME}",
-    "description": "${TEMPLATE_DESC}",
-    "version": "${TEMPLATE_VERSION}",
+    "name": "${PLUGIN_NAMES[0]}",
+    "description": "${PLUGIN_DESC}",
+    "version": "${PLUGIN_VERSION}",
     "api": "^8.0",
-    "url": "${TEMPLATE_URL}",
-    "responsive": ${TEMPLATE_RESPONSIVE},
+    "url": "${PLUGIN_URL}",
+    "responsive": ${PLUGIN_TEMPLATE_RESPONSIVE_VAL},
     "layouts": {
         "default": {
             "template": "template.php",
             "slots": ["right"]
         }
     },
-    "dark": ${TEMPLATE_DARK},
+    "dark": ${PLUGIN_TEMPLATE_DARK_VAL},
     "bbcode.buttons": true,
     "box.parent": "ul",
     "box.item": "li",
     "box.title": "h2",
     "box.title.inside": true
 }
+EOF
+)
+
+  echo ""
+  echo "${PLUGIN_TEMPLATE_JSON}"
+  echo ""
+
+  generationConfirm
+}
+
+function createTemplateJson() {
+  cat >plugin.json <<EOF
+${PLUGIN_TEMPLATE_JSON}
 EOF
 }
 
@@ -289,7 +397,7 @@ defined('SL_ROOT') or exit
 EOF
 }
 
-function createTemplateLabels(){
+function createTemplateLabels() {
   mkdir labels
 
   cat >labels/en.php <<EOF
@@ -311,13 +419,7 @@ return [
 EOF
 }
 
-function createTemplate() {
-  # create plugin.json
-  createTemplateJson $1
-  # create template.php
-  createTemplateFile
-  # create labels/(cs|en).php
-  createTemplateLabels
+function copyTemplate() {
   # copy images from Default
   if [ -d '../default/images' ]; then
 
@@ -325,10 +427,10 @@ function createTemplate() {
     COPY_IMAGES=${COPY_IMAGES:-y}
     COPY_IMAGES=${COPY_IMAGES,,} # lowercase
     case "$COPY_IMAGES" in
-      (y|yes|1)
-        cp -r ../default/images ./images
+    y | yes | 1)
+      cp -r ../default/images ./images
       ;;
-      (*) mkdir images ;;
+    *) mkdir images ;;
     esac
 
   fi
@@ -344,4 +446,3 @@ function createTemplate() {
 header
 # run wizard
 runWizard
-
