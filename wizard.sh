@@ -33,6 +33,7 @@ DEFAULT_TYPE="extend"
 DEFAULT_NAME="Foobar"
 DEFAULT_DESC=""
 DEFAULT_VER="1.0.0"
+DEFAULT_ENV_SYSTEM="^8.0"
 DEFAULT_URL="https://sunlight-cms.cz"
 DEFAULT_TPL_RESPONSIVE="n"
 DEFAULT_TPL_DARK="n"
@@ -41,6 +42,7 @@ PLUGIN_TYPE=""
 PLUGIN_NAMES=("" "" "") # plugin name, class name, dir name
 PLUGIN_DESC=""
 PLUGIN_VERSION=""
+PLUGIN_ENV_SYSTEM=""
 PLUGIN_URL=""
 PLUGIN_TEMPLATE_RESPONSIVE=""
 PLUGIN_TEMPLATE_RESPONSIVE_VAL=""
@@ -86,6 +88,7 @@ function createPluginByType() {
     inputPluginName
     inputPluginDesc
     inputPluginVersion
+    inputEnvSystemVersion
     inputPluginUrl
 
     generationExtendPreview
@@ -99,6 +102,7 @@ function createPluginByType() {
     inputPluginName
     inputPluginDesc
     inputPluginVersion
+    inputEnvSystemVersion
     inputPluginUrl
     inputTemplateReponsive
     inputTemplateDark
@@ -156,6 +160,11 @@ function inputPluginDesc() {
 function inputPluginVersion() {
   read -i "$PLUGIN_VERSION" -ep $'Version [\033[0;33m1.0.0\033[0m]: ' VERSION
   PLUGIN_VERSION=${VERSION:-${DEFAULT_VER}}
+}
+
+function inputEnvSystemVersion() {
+  read -i "$PLUGIN_ENV_SYSTEM" -ep $'Env - System Version [\033[0;33m^8.0\033[0m]: ' SYSTEMVER
+  PLUGIN_ENV_SYSTEM=${SYSTEMVER:-${DEFAULT_ENV_SYSTEM}}
 }
 
 function inputPluginUrl() {
@@ -253,7 +262,9 @@ function generationExtendPreview() {
     "name": "${PLUGIN_NAMES[0]}",
     "description": "${PLUGIN_DESC}",
     "version": "${PLUGIN_VERSION}",
-    "api": "^8.0",
+    "environment": {
+        "system": "${PLUGIN_ENV_SYSTEM}"
+    },
     "url": "${PLUGIN_URL}",
     "class": "${PLUGIN_NAMES[1]}Plugin",
     "langs": {
@@ -322,7 +333,9 @@ function generationTemplatePreview() {
     "name": "${PLUGIN_NAMES[0]}",
     "description": "${PLUGIN_DESC}",
     "version": "${PLUGIN_VERSION}",
-    "api": "^8.0",
+    "environment": {
+        "system": "${PLUGIN_ENV_SYSTEM}"
+    },
     "url": "${PLUGIN_URL}",
     "responsive": ${PLUGIN_TEMPLATE_RESPONSIVE_VAL},
     "layouts": {
