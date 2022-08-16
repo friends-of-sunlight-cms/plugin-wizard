@@ -29,6 +29,8 @@ BGRED='\033[0;41m'
 #=========================================================
 # VARIABLES
 #=========================================================
+GENERATE_PLUGIN_FILES="false"
+
 DEFAULT_TYPE="extend"
 DEFAULT_NAME="Foobar"
 DEFAULT_DESC=""
@@ -83,14 +85,14 @@ function runWizard() {
 function createPluginByType() {
   inputPluginType
 
+  inputPluginName
+  inputPluginDesc
+  inputPluginVersion
+  inputEnvSystemVersion
+  inputPluginUrl
+
   case "$PLUGIN_TYPE" in
   extend)
-    inputPluginName
-    inputPluginDesc
-    inputPluginVersion
-    inputEnvSystemVersion
-    inputPluginUrl
-
     generationExtendPreview
 
     createPluginFolders ${PLUGIN_TYPE} ${PLUGIN_NAMES[2]}
@@ -99,11 +101,6 @@ function createPluginByType() {
     createExtendResLang
     ;;
   template)
-    inputPluginName
-    inputPluginDesc
-    inputPluginVersion
-    inputEnvSystemVersion
-    inputPluginUrl
     inputTemplateReponsive
     inputTemplateDark
 
@@ -121,6 +118,7 @@ function createPluginByType() {
   echo ""
   printf "${GREEN}DONE! The skeleton of the new plugin '${NC}${PLUGIN_NAMES[0]^}${GREEN}' is ready.${NC}"
   echo ""
+  exit 1
 }
 
 #=========================================================
@@ -147,14 +145,16 @@ function inputPluginType() {
 }
 
 function inputPluginName() {
-  read -i "$PLUGIN_NAME" -ep $'Name [\033[0;33mFoobar\033[0m]: ' PLUGIN_NAME
-  PLUGIN_NAMES[0]=${PLUGIN_NAME:-${DEFAULT_NAME}}
+  read -i "$PLUGIN_NAME" -ep $'Name [\033[0;33mFoobar\033[0m]: ' NAME
+  PLUGIN_NAME=${NAME:-${DEFAULT_NAME}}
+  PLUGIN_NAMES[0]=${PLUGIN_NAME}
   PLUGIN_NAMES[1]=${PLUGIN_NAMES[0]// /} # remove spaces
   PLUGIN_NAMES[2]=${PLUGIN_NAMES[1],,}   # lowercase
 }
 
 function inputPluginDesc() {
-  read -i "$PLUGIN_DESC" -ep 'Description []: ' PLUGIN_DESC
+  read -i "$PLUGIN_DESC" -ep 'Description []: ' DESC
+  PLUGIN_DESC=${DESC:-${DEFAULT_DESC}}
 }
 
 function inputPluginVersion() {
@@ -173,7 +173,7 @@ function inputPluginUrl() {
 }
 
 function inputTemplateReponsive() {
-  read -ep $'Is RESPONSIVE (y|n) [\033[0;33mn\033[0m]?: ' RESP
+  read -i "$PLUGIN_TEMPLATE_RESPONSIVE" -ep $'Is RESPONSIVE (y|n) [\033[0;33mn\033[0m]?: ' RESP
   PLUGIN_TEMPLATE_RESPONSIVE=${RESP:-${DEFAULT_TPL_RESPONSIVE}}
   PLUGIN_TEMPLATE_RESPONSIVE=${PLUGIN_TEMPLATE_RESPONSIVE,,}
 
@@ -184,7 +184,7 @@ function inputTemplateReponsive() {
 }
 
 function inputTemplateDark() {
-  read -ep $'Is DARK (y|n) [\033[0;33mn\033[0m]?: ' DARK
+  read -i "$PLUGIN_TEMPLATE_DARK" -ep $'Is DARK (y|n) [\033[0;33mn\033[0m]?: ' DARK
   PLUGIN_TEMPLATE_DARK=${DARK:-${DEFAULT_TPL_DARK}}
   PLUGIN_TEMPLATE_DARK=${PLUGIN_TEMPLATE_DARK,,}
 
@@ -199,16 +199,17 @@ function inputTemplateDark() {
 #=========================================================
 
 function generationConfirm() {
-  read -ep $'Do you confirm generation (y|n) [\033[0;33my\033[0m]?: ' GEN
+  read -ep $'Do you confirm generation (y|n) [\033[0;33my\033[0m, f to fix]?: ' GEN
   GEN=${GEN:-y}
   GEN=${GEN,,}
   case "$GEN" in
   y | yes | 1)
+    GENERATE_PLUGIN_FILES="true" # enable file generation
     echo ""
-    printf "${GREEN}Generating plugin files${NC}"
+    printf "${GREEN}Generating plugin files...${NC}"
     echo ""
     ;;
-  *)
+  f | fix)
     read -ep $'Do you want to correct the entered values? (y|n) [\033[0;33my\033[0m]?: ' COR
     COR=${COR:-y}
     COR=${COR,,}
@@ -223,11 +224,21 @@ function generationConfirm() {
       ;;
     esac
     ;;
+  *)
+    printErr "Command aborted"
+    exit 1
+    ;;
   esac
 }
 
 function createPluginFolders() {
   local PLUGIN_PATH="plugins/$1/$2"
+
+  if [ "$GENERATE_PLUGIN_FILES" = "false" ]; then
+    echo ""
+    printErr "The plugin structure was not generated!"
+    exit 1
+  fi
 
   if [ ! -d ${PLUGIN_PATH} ]; then
     mkdir -p ${PLUGIN_PATH}
