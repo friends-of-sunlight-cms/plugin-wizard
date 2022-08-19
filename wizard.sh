@@ -36,7 +36,7 @@ DEFAULT_NAME="Foobar"
 DEFAULT_DESC=""
 DEFAULT_VER="1.0.0"
 DEFAULT_ENV_SYSTEM="^8.0"
-DEFAULT_URL="https://sunlight-cms.cz"
+DEFAULT_URL="https://github.com/friends-of-sunlight-cms/"
 DEFAULT_TPL_RESPONSIVE="n"
 DEFAULT_TPL_DARK="n"
 
@@ -168,7 +168,7 @@ function inputEnvSystemVersion() {
 }
 
 function inputPluginUrl() {
-  read -i "$PLUGIN_URL" -ep $'Url [\033[0;33mhttps://sunlight-cms.cz\033[0m]: ' URL
+  read -i "$PLUGIN_URL" -ep $'Url [\033[0;33mhttps://github.com/friends-of-sunlight-cms/\033[0m]: ' URL
   PLUGIN_URL=${URL:-${DEFAULT_URL}}
 }
 
