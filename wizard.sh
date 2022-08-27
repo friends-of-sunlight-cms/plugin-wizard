@@ -279,7 +279,7 @@ function generationExtendPreview() {
     "url": "${PLUGIN_URL}",
     "class": "${PLUGIN_NAMES[1]}Plugin",
     "langs": {
-        "${PLUGIN_NAMES[2],,}": "resources/languages/"
+        "${PLUGIN_NAMES[2],,}": "/languages/"
     },
     "events": [],
     "events.web": [],
