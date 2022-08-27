@@ -279,7 +279,7 @@ function generationExtendPreview() {
     "url": "${PLUGIN_URL}",
     "class": "${PLUGIN_NAMES[1]}Plugin",
     "langs": {
-        "${PLUGIN_NAMES[2],,}": "Resources/languages/"
+        "${PLUGIN_NAMES[2],,}": "resources/languages/"
     },
     "events": [],
     "events.web": [],
@@ -302,11 +302,11 @@ EOF
 }
 
 function createExtendResLang() {
-  mkdir -p Resources/languages
+  mkdir -p resources/languages
 
   lng=(en cs)
   for i in "${lng[@]}"; do
-    cat >Resources/languages/$i.php <<EOF
+    cat >resources/languages/$i.php <<EOF
 <?php
 
 return [
