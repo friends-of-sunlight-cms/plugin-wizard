@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WIZVERSION="1.0.0"
+WIZVERSION="1.0.1"
 
 #=========================================================
 # CLI COLORS
@@ -242,6 +242,13 @@ function createPluginFolders() {
 
   if [ ! -d ${PLUGIN_PATH} ]; then
     mkdir -p ${PLUGIN_PATH}
+    mkdir -p ${PLUGIN_PATH}/class/
+    mkdir -p ${PLUGIN_PATH}/public/
+
+    cd ${PLUGIN_PATH}/public
+    createPublicHtaccess
+    cd $OLDPWD
+
     cd ${PLUGIN_PATH}
   else
     echo ""
@@ -261,6 +268,18 @@ function createPluginFolders() {
   fi
 }
 
+function createPublicHtaccess() {
+  cat >.htaccess <<EOF
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+</IfModule>
+EOF
+}
+
 #=========================================================
 # EXTEND TYPE
 #=========================================================
@@ -276,10 +295,12 @@ function generationExtendPreview() {
     "environment": {
         "system": "${PLUGIN_ENV_SYSTEM}"
     },
-    "url": "${PLUGIN_URL}",
+    "authors": [
+        {"url": "${PLUGIN_URL}"}
+    ],
     "class": "${PLUGIN_NAMES[1]}Plugin",
     "langs": {
-        "${PLUGIN_NAMES[2],,}": "/languages/"
+        "${PLUGIN_NAMES[2],,}": "lang"
     },
     "events": [],
     "events.web": [],
@@ -302,11 +323,11 @@ EOF
 }
 
 function createExtendResLang() {
-  mkdir -p resources/languages
+  mkdir -p lang
 
   lng=(en cs)
   for i in "${lng[@]}"; do
-    cat >resources/languages/$i.php <<EOF
+    cat >lang/$i.php <<EOF
 <?php
 
 return [
@@ -318,7 +339,7 @@ EOF
 function createExtendClass() {
   local NAMESPACE=${PLUGIN_NAMES[2]^} # capitalize
 
-  cat >${PLUGIN_NAMES[1]}Plugin.php <<EOF
+  cat >class/${PLUGIN_NAMES[1]}Plugin.php <<EOF
 <?php
 
 namespace SunlightExtend\\${NAMESPACE};
@@ -347,7 +368,9 @@ function generationTemplatePreview() {
     "environment": {
         "system": "${PLUGIN_ENV_SYSTEM}"
     },
-    "url": "${PLUGIN_URL}",
+    "authors": [
+        {"url": "${PLUGIN_URL}"}
+    ],
     "responsive": ${PLUGIN_TEMPLATE_RESPONSIVE_VAL},
     "layouts": {
         "default": {
